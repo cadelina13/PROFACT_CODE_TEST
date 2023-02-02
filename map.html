@@ -1,0 +1,125 @@
+<html>
+  <head>
+    <title>Backend Test - Map</title>
+    <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+  </head>
+
+  <style>
+        #googleMap {
+            height: 100%;
+        }
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+		#search{
+			width:100%;
+			height:40px;
+			font-size:24px;
+        }
+  </style>
+  <body>
+  <div>
+	<input type="text" placeholder="search" id="search">
+  </div>
+    <div id="googleMap"></div>
+	<script src="https://cdn.jsdelivr.net/npm/underscore@1.13.6/underscore-umd-min.js"></script>
+    <script>
+		var API_URL = "https://localhost:7163/api/coords";
+		var map = null;
+        var postData = {
+            northeast: {
+                lat: 0,
+                lng: 0
+            },
+            southwest: {
+                lat: 0,
+                lng: 0
+            },
+            zoom:0,
+			search: ''
+        }
+
+        var markers = [];
+
+		document.getElementById("search").addEventListener("input", _.debounce(updateMap , 500));
+
+        function initMap() {
+
+            var mapProp = {
+                center:new google.maps.LatLng(41.91509058, -88.15449216),
+                zoom:20,
+                restriction: {
+                latLngBounds: {
+                    north: 49.384358,
+                    south: 24.396308,
+                    west: -124.848974,
+                    east: -66.885444,
+                },
+                strictBounds: false,
+                },
+            };
+
+            
+
+            map = new google.maps.Map(document.getElementById("googleMap"), mapProp);
+
+            map.addListener("idle", () => {
+				updateMap();
+            });
+        }
+		var lastMarkerClicked = null;
+
+        function markerClicked(marker) {
+            alert(marker.title);
+            let j = marker.getPosition().toJSON();
+            if (lastMarkerClicked != null){
+                let lastJson = lastMarkerClicked.getPosition().toJSON();
+                console.log({lat: lastJson.lat - j.lat, lng: lastJson.lng - j.lng});
+            }
+
+            lastMarkerClicked = marker;
+        }
+        
+        
+		function updateMap() {
+				postData.northeast.lat = map.getBounds().getNorthEast().lat();
+                postData.northeast.lng = map.getBounds().getNorthEast().lng();
+                postData.southwest.lat = map.getBounds().getSouthWest().lat();
+                postData.southwest.lng = map.getBounds().getSouthWest().lng();
+                console.log(JSON.stringify(postData));
+                postData.zoom = map.getZoom();
+				postData.search = document.getElementById("search").value;
+                axios.post(API_URL, postData)
+                    .then(response => {
+                        for (var i = 0; i < markers.length; i++ ) {
+                            markers[i].setMap(null);
+                        }
+                        markers.length = 0;
+
+                        response.data.results.forEach(element => {
+                            let m = new google.maps.Marker({
+                            position: { lat: element.latitude, lng: element.longitude },
+                            map,
+                            title: element.title,
+                        });
+
+                        m.addListener("click", () => {
+                            markerClicked(m);
+                        });
+
+                        markers.push(m);
+                    });
+                });
+		}
+    </script>
+	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfXwrqAFP5_v5u5vPFQYp-_HfuwyiQc40&callback=initMap&v=weekly"
+      defer
+    ></script>
+  </body>
+</html>
