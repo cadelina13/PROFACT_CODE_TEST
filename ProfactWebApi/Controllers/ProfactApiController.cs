@@ -21,15 +21,13 @@ namespace ProfactWebApi.Controllers
             _cache = cache;
         }
 
-        record JsonFileModel(string GlobalID, string PROPADDRL2, double POINT_X, double POINT_Y);
-
         [HttpGet("ExtractFile")]
         public async Task<IActionResult> ExtractFile()
         {
             using (var db = _dbFactory.CreateDbContext())
             {
                 var str = _convertService.ConvertCSV();
-                var list = Newtonsoft.Json.JsonConvert.DeserializeObject<List<JsonFileModel>>(str);
+                var list = Newtonsoft.Json.JsonConvert.DeserializeObject<List<JsonFileViewModel>>(str);
                 var dataToSave = new List<Boundaries>();
                 foreach (var i in list)
                 {
@@ -49,8 +47,6 @@ namespace ProfactWebApi.Controllers
                 return Ok(rs);
             }
         }
-
-
 
         [HttpPost("Coords")]
         public async Task<IActionResult> Coords(PostData data)
