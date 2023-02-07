@@ -62,12 +62,12 @@ namespace ProfactWebApi.Controllers
                         (x.Coordinate.Lat >= data.Southwest.Lat && x.Coordinate.Lng >= data.Southwest.Lng) &&
                         (x.Coordinate.Lat <= data.Northeast.Lat && x.Coordinate.Lng <= data.Northeast.Lng)
                         );
-                    rs = list.Select(x => new ResultViewModel
+                    rs = await list.Select(x => new ResultViewModel
                     {
                         latitude = x.Coordinate.Lat,
                         longitude = x.Coordinate.Lng,
                         title = x.Title
-                    }).ToList();
+                    }).ToListAsync();
                     _cache.Set(key, rs, TimeSpan.FromHours(2));
                 }
                 var result = new
